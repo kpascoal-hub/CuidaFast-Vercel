@@ -1,1 +1,0 @@
-# CuidaFast-Vercel

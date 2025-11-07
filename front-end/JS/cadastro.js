@@ -105,11 +105,11 @@ window.addEventListener('DOMContentLoaded', () => {
     return;
   }
 
-  // Cliente ativo por padrão
-  btnCliente.classList.add('active');
-  btnCliente.classList.remove('inactive');
-  btnCuidador.classList.remove('active');
-  btnCuidador.classList.add('inactive');
+  // Cuidador ativo por padrão (conforme HTML)
+  btnCuidador.classList.add('active');
+  btnCuidador.classList.remove('inactive');
+  btnCliente.classList.remove('active');
+  btnCliente.classList.add('inactive');
   if (btnSubmit) btnSubmit.textContent = "Continuar";
 
   // Adicionar event listeners
@@ -175,7 +175,7 @@ async function handleFormSubmit(event) {
 
   try {
     // Enviar dados para o backend
-    const response = await fetch('http://localhost:3000/api/auth/register', {
+    const response = await fetch('/api/auth/register', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -185,7 +185,8 @@ async function handleFormSubmit(event) {
         email,
         senha,
         telefone: telefone || null,
-        data_nascimento: null
+        data_nascimento: null,
+        tipo: tipoUsuario
       })
     });
 

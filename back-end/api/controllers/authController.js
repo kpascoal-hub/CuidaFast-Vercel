@@ -4,6 +4,8 @@ const { body, validationResult } = require('express-validator');
 
 const UsuarioModel = require('../models/UsuarioModel');
 const TokenModel = require('../models/TokenModel');
+const ClienteModel = require('../models/ClienteModel');
+const CuidadorModel = require('../models/CuidadorModel');
 
 const ACCESS_EXPIRES = '15m';
 const REFRESH_EXPIRES = '30d';
@@ -31,7 +33,13 @@ exports.register = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
 
-  const { nome, email, senha, telefone, data_nascimento } = req.body;
+  const { nome, email, senha, telefone, data_nascimento, tipo } = req.body;
+  
+  // Validar tipo de usuário
+  if (tipo && !['cliente', 'cuidador'].includes(tipo)) {
+    return res.status(400).json({ message: 'Tipo de usuário inválido. Use "cliente" ou "cuidador"' });
+  }
+
   try {
     const existing = await UsuarioModel.findByEmail(email);
     if (existing) return res.status(409).json({ message: 'Email já cadastrado' });
@@ -45,9 +53,37 @@ exports.register = async (req, res) => {
       data_nascimento: data_nascimento || null,
     });
 
+    // Criar registro na tabela específica (cliente ou cuidador)
+    if (tipo === 'cliente') {
+      await ClienteModel.create({
+        usuario_id: userId,
+        historico_contratacoes: null,
+        endereco: null,
+        preferencias: null
+      });
+    } else if (tipo === 'cuidador') {
+      await CuidadorModel.create({
+        usuario_id: userId,
+        tipos_cuidado: null,
+        descricao: null,
+        valor_hora: null,
+        especialidades: null,
+        experiencia: null,
+        avaliacao: null,
+        horarios_disponiveis: null,
+        idiomas: null,
+        formacao: null,
+        local_trabalho: null,
+        ganhos: null
+      });
+    }
+
     const user = await UsuarioModel.getById(userId);
     // não enviar senha de volta
     delete user.senha;
+
+    // Adicionar tipo ao retorno
+    user.tipo = tipo || null;
 
     return res.status(201).json({ user });
   } catch (err) {

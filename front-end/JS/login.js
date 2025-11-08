@@ -133,50 +133,101 @@ document.addEventListener('DOMContentLoaded', function() {
   // Botão de login com Google no modal (index ou sobre-nos)
   const btnGoogleLogin = document.getElementById('btnGoogleLogin') || document.getElementById('btnGoogleLoginSobre');
   if (btnGoogleLogin) {
-    btnGoogleLogin.addEventListener('click', function() {
+    btnGoogleLogin.addEventListener('click', async function() {
       console.log('[Login] Login com Google clicado');
       
-      // Código para login com Google (Firebase Auth já configurado!)
-      import('https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js')
-        .then(({ signInWithPopup, GoogleAuthProvider }) => {
-          import('../JS/firebase-init.js').then(({ auth }) => {
-            
-            const provider = new GoogleAuthProvider();
-            signInWithPopup(auth, provider)
-              .then((result) => {
-                const user = result.user;
-                
-                // Salvar no localStorage
-                const userData = {
-                  nome: user.displayName,
-                  email: user.email,
-                  photoURL: user.photoURL,
-                  tipo: 'cliente',
-                  dataCadastro: new Date().toISOString(),
-                  primeiroNome: user.displayName.split(' ')[0]
-                };
-                
-                localStorage.setItem('cuidafast_user', JSON.stringify(userData));
-                localStorage.setItem('cuidafast_isLoggedIn', 'true');
-                salvarUsuarioNaLista(userData);
-                
-                // Fechar modal
-                const loginModal = document.getElementById('loginModal');
-                const modalInstance = bootstrap.Modal.getInstance(loginModal);
-                if (modalInstance) modalInstance.hide();
-                
-                // Redirecionar (ajustar path se estiver em sobre-nos)
-                alert(`✅ Bem-vindo(a), ${userData.primeiroNome}!`);
-                const isIndexPage = window.location.pathname.includes('index.html') || window.location.pathname === '/';
-                window.location.href = isIndexPage ? 'front-end/HTML/homeCliente.html' : '../HTML/homeCliente.html';
-              })
-              .catch((error) => {
-                console.error('Erro no login com Google:', error);
-                alert('❌ Erro ao fazer login com Google: ' + error.message);
-              });
+      try {
+        // Importar módulos do Firebase dinamicamente
+        const { signInWithPopup, GoogleAuthProvider } = await import('https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js');
+        const { auth } = await import('../JS/firebase-init.js');
+        
+        const provider = new GoogleAuthProvider();
+        
+        const result = await signInWithPopup(auth, provider);
+        const user = result.user;
+        console.log('[Login] Usuário autenticado com Google:', user);
+        
+        // Obter token do Firebase
+        const token = await user.getIdToken();
+        
+        // Criar objeto de usuário
+        const userData = {
+          nome: user.displayName || 'Usuário',
+          email: user.email,
+          photoURL: user.photoURL,
+          tipo: 'cliente', // Padrão para login rápido
+          dataCadastro: new Date().toISOString(),
+          primeiroNome: (user.displayName || 'Usuário').split(' ')[0],
+          firebase_uid: user.uid,
+          loginGoogle: true
+        };
+        
+        // Tentar autenticar com o backend
+        try {
+          const response = await fetch('/api/cadastro/login/google', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              token: token,
+              tipo_usuario: 'cliente'
+            })
           });
-        });
+          
+          const data = await response.json();
+          
+          if (response.ok) {
+            // Atualizar com dados do backend
+            userData.id = data.user.id;
+            console.log('[Login] Autenticação com backend bem-sucedida');
+          } else {
+            console.warn('[Login] Backend retornou erro, continuando com dados locais:', data.message);
+          }
+        } catch (backendError) {
+          console.warn('[Login] Erro ao comunicar com backend, continuando com dados locais:', backendError);
+        }
+        
+        // Salvar no localStorage
+        localStorage.setItem('cuidafast_user', JSON.stringify(userData));
+        localStorage.setItem('cuidafast_isLoggedIn', 'true');
+        salvarUsuarioNaLista(userData);
+        
+        // Fechar modal
+        const loginModal = document.getElementById('loginModal') || document.getElementById('loginModalSobre');
+        if (loginModal) {
+          const modalInstance = bootstrap.Modal.getInstance(loginModal);
+          if (modalInstance) modalInstance.hide();
+        }
+        
+        // Redirecionar
+        alert(`✅ Bem-vindo(a), ${userData.primeiroNome}!`);
+        const isIndexPage = window.location.pathname.includes('index.html') || 
+                           window.location.pathname === '/' || 
+                           window.location.pathname.endsWith('/');
+        window.location.href = isIndexPage ? 'front-end/HTML/homeCliente.html' : '../HTML/homeCliente.html';
+        
+      } catch (error) {
+        console.error('[Login] Erro no login com Google:', error);
+        
+        // Mensagens de erro mais específicas
+        let errorMessage = 'Erro ao fazer login com Google';
+        if (error.code === 'auth/popup-closed-by-user') {
+          errorMessage = 'Login cancelado. Tente novamente.';
+        } else if (error.code === 'auth/popup-blocked') {
+          errorMessage = 'Pop-up bloqueado pelo navegador. Permita pop-ups para este site.';
+        } else if (error.code === 'auth/cancelled-popup-request') {
+          errorMessage = 'Solicitação de login cancelada.';
+        } else {
+          errorMessage += ': ' + error.message;
+        }
+        
+        alert('❌ ' + errorMessage);
+      }
     });
+    console.log('[Login] Botão de login com Google configurado');
+  } else {
+    console.warn('[Login] Botão de login com Google não encontrado');
   }
 });
 

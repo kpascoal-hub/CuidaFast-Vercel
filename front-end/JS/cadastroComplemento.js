@@ -28,33 +28,82 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // Função para processar arquivo de imagem
+  function processImageFile(file) {
+    if (!file) return;
+
+    // Validar tamanho (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Arquivo muito grande. Tamanho máximo: 5MB');
+      return;
+    }
+
+    // Validar tipo
+    if (!file.type.startsWith('image/')) {
+      alert('Por favor, selecione uma imagem válida.');
+      return;
+    }
+
+    // Ler e mostrar preview
+    const reader = new FileReader();
+    reader.onload = function(event) {
+      uploadedPhotoURL = event.target.result;
+      photoPreview.innerHTML = `<img src="${uploadedPhotoURL}" alt="Preview da foto">`;
+      console.log('[cadastroComplemento] Foto carregada');
+    };
+    reader.readAsDataURL(file);
+  }
+
   // Preview da foto selecionada
   if (photoUpload && photoPreview) {
     photoUpload.addEventListener('change', function(e) {
       const file = e.target.files[0];
-      if (file) {
-        // Validar tamanho (5MB)
-        if (file.size > 5 * 1024 * 1024) {
-          alert('Arquivo muito grande. Tamanho máximo: 5MB');
-          return;
-        }
-
-        // Validar tipo
-        if (!file.type.startsWith('image/')) {
-          alert('Por favor, selecione uma imagem válida.');
-          return;
-        }
-
-        // Ler e mostrar preview
-        const reader = new FileReader();
-        reader.onload = function(event) {
-          uploadedPhotoURL = event.target.result;
-          photoPreview.innerHTML = `<img src="${uploadedPhotoURL}" alt="Preview da foto">`;
-          console.log('[cadastroComplemento] Foto carregada');
-        };
-        reader.readAsDataURL(file);
-      }
+      processImageFile(file);
     });
+  }
+
+  // Drag and drop functionality
+  const photoUploadContainer = document.querySelector('.photo-upload-container');
+  if (photoUploadContainer) {
+    // Prevenir comportamento padrão
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+      photoUploadContainer.addEventListener(eventName, preventDefaults, false);
+      document.body.addEventListener(eventName, preventDefaults, false);
+    });
+
+    function preventDefaults(e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
+    // Highlight ao arrastar
+    ['dragenter', 'dragover'].forEach(eventName => {
+      photoUploadContainer.addEventListener(eventName, highlight, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+      photoUploadContainer.addEventListener(eventName, unhighlight, false);
+    });
+
+    function highlight(e) {
+      photoUploadContainer.classList.add('drag-over');
+    }
+
+    function unhighlight(e) {
+      photoUploadContainer.classList.remove('drag-over');
+    }
+
+    // Handle drop
+    photoUploadContainer.addEventListener('drop', handleDrop, false);
+
+    function handleDrop(e) {
+      const dt = e.dataTransfer;
+      const files = dt.files;
+      
+      if (files.length > 0) {
+        processImageFile(files[0]);
+      }
+    }
   }
 
   // ----------- FUNÇÃO: buscar CEP -----------
@@ -131,6 +180,36 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // Função para validar CPF
+  function validarCPF(cpf) {
+    cpf = cpf.replace(/\D/g, '');
+    
+    if (cpf.length !== 11) return false;
+    
+    // Verificar se todos os dígitos são iguais
+    if (/^(\d)\1{10}$/.test(cpf)) return false;
+    
+    // Validar primeiro dígito verificador
+    let soma = 0;
+    for (let i = 0; i < 9; i++) {
+      soma += parseInt(cpf.charAt(i)) * (10 - i);
+    }
+    let resto = (soma * 10) % 11;
+    if (resto === 10 || resto === 11) resto = 0;
+    if (resto !== parseInt(cpf.charAt(9))) return false;
+    
+    // Validar segundo dígito verificador
+    soma = 0;
+    for (let i = 0; i < 10; i++) {
+      soma += parseInt(cpf.charAt(i)) * (11 - i);
+    }
+    resto = (soma * 10) % 11;
+    if (resto === 10 || resto === 11) resto = 0;
+    if (resto !== parseInt(cpf.charAt(10))) return false;
+    
+    return true;
+  }
+
   const cpfInput = document.getElementById('cpf');
   if (cpfInput) {
     cpfInput.addEventListener('input', (e) => {
@@ -141,6 +220,22 @@ document.addEventListener('DOMContentLoaded', () => {
         value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
       }
       e.target.value = value;
+    });
+
+    // Validar CPF ao sair do campo
+    cpfInput.addEventListener('blur', (e) => {
+      const cpf = e.target.value;
+      if (cpf && !validarCPF(cpf)) {
+        alert('❌ CPF inválido. Por favor, verifique o número digitado.');
+        e.target.style.borderColor = '#ff4444';
+      } else if (cpf) {
+        e.target.style.borderColor = '#4CAF50';
+      }
+    });
+
+    // Remover cor de erro ao digitar novamente
+    cpfInput.addEventListener('focus', (e) => {
+      e.target.style.borderColor = '';
     });
   }
 

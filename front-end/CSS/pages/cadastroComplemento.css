@@ -12,11 +12,18 @@
   border: 2px dashed #e0e0e0;
   transition: all 0.3s ease;
   margin-bottom: 1rem;
+  cursor: pointer;
 }
 
 .photo-upload-container:hover {
   border-color: var(--azul-escuro, #1B475D);
   background: rgba(27, 71, 93, 0.05);
+}
+
+.photo-upload-container.drag-over {
+  border-color: var(--amarelo, #FAD564);
+  background: rgba(250, 213, 100, 0.15);
+  transform: scale(1.02);
 }
 
 .photo-preview {
@@ -63,8 +70,8 @@
 }
 
 .btn-buscar-cep {
-  background: var(--azul-escuro);
-  color: white;
+  background: var(--amarelo, #FAD564);
+  color: var(--azul-escuro);
   border: none;
   border-radius: 8px;
   width: 50px;
@@ -75,10 +82,11 @@
   cursor: pointer;
   transition: all 0.3s ease;
   flex-shrink: 0;
+  font-weight: 600;
 }
 
 .btn-buscar-cep:hover {
-  background: var(--azul-escuro-hover, #163947);
+  background: #f0c84d;
   transform: scale(1.05);
 }
 
@@ -316,6 +324,59 @@
   justify-content: center;
   font-weight: bold;
   font-size: 1rem;
+}
+
+/* Botão secundário - cor bege */
+.btn-secondary {
+  background: var(--amarelo, #FAD564);
+  color: var(--azul-escuro);
+  border: 2px solid var(--amarelo, #FAD564);
+  padding: 0.875rem 1.5rem;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.95rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.btn-secondary:hover {
+  background: #f0c84d;
+  border-color: #f0c84d;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(250, 213, 100, 0.3);
+}
+
+/* Melhorar design do input de data (calendário) */
+input[type="date"] {
+  position: relative;
+  cursor: pointer;
+  color: #333;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.3s ease;
+  width: 20px;
+  height: 20px;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+input[type="date"]:focus::-webkit-calendar-picker-indicator {
+  opacity: 1;
+}
+
+/* Estilizar quando a data está preenchida */
+input[type="date"]:valid {
+  color: var(--azul-escuro);
+  font-weight: 500;
 }
 
 @media (max-width: 768px) {

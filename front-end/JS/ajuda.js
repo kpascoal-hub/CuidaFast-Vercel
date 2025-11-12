@@ -1,4 +1,4 @@
-// ===== Sistema de busca na Central de Ajuda =====
+
 document.addEventListener("DOMContentLoaded", () => {
   const searchInput = document.getElementById("searchInput");
   const searchBtn = document.getElementById("searchBtn");
